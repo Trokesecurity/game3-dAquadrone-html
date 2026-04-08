@@ -1,0 +1,90 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace SubDrone.Gameplay3D
+{
+    public sealed class AquaGameMode3D : MonoBehaviour
+    {
+        [Header("Round")]
+        public float roundDurationSeconds = 120f;
+        public int targetCells = 8;
+
+        [Header("Runtime (Read only)")]
+        [SerializeField] private float remainingTime;
+        [SerializeField] private int collectedCells;
+        [SerializeField] private bool isRoundOver;
+
+        public float RemainingTime => remainingTime;
+        public int CollectedCells => collectedCells;
+        public bool IsRoundOver => isRoundOver;
+        public bool HasWon => isRoundOver && collectedCells >= targetCells;
+
+        private void Start()
+        {
+            remainingTime = roundDurationSeconds;
+            collectedCells = 0;
+            isRoundOver = false;
+        }
+
+        private void Update()
+        {
+            if (isRoundOver)
+            {
+                if (UnityEngine.Input.GetKeyDown(KeyCode.Return))
+                {
+                    SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                }
+
+                return;
+            }
+
+            remainingTime = Mathf.Max(0f, remainingTime - Time.deltaTime);
+            if (remainingTime <= 0f)
+            {
+                isRoundOver = true;
+            }
+        }
+
+        public void RegisterCellCollected()
+        {
+            if (isRoundOver)
+            {
+                return;
+            }
+
+            collectedCells++;
+            if (collectedCells >= targetCells)
+            {
+                isRoundOver = true;
+            }
+        }
+
+        private void OnGUI()
+        {
+            var style = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 20,
+                normal = { textColor = Color.cyan }
+            };
+
+            GUI.Label(new Rect(18f, 18f, 420f, 32f), $"Células: {collectedCells}/{targetCells}", style);
+            GUI.Label(new Rect(18f, 48f, 420f, 32f), $"Tempo: {remainingTime:0}s", style);
+
+            if (!isRoundOver)
+            {
+                return;
+            }
+
+            var endStyle = new GUIStyle(style)
+            {
+                fontSize = 28,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = HasWon ? Color.green : Color.red }
+            };
+
+            var message = HasWon ? "Missão concluída!" : "Tempo esgotado!";
+            GUI.Label(new Rect(0f, Screen.height * 0.35f, Screen.width, 40f), message, endStyle);
+            GUI.Label(new Rect(0f, Screen.height * 0.35f + 40f, Screen.width, 40f), "Pressione Enter para reiniciar", endStyle);
+        }
+    }
+}
